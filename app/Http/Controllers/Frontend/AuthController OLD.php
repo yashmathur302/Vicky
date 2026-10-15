@@ -28,6 +28,11 @@ use \App\Mail\FrontendPasswordResetMail;
 use Illuminate\Support\Str;
 use App\Http\Requests\FrontendResetPasswordRequest;
 use App\Http\Requests\FrontendLoginRequest;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Cache;
+use \Illuminate\Support\Facades\Schema;
+use App\Mail\PasswordResetSuccessMail;
+
 
 class AuthController extends Controller
 {
@@ -36,29 +41,20 @@ class AuthController extends Controller
         $requestIp = $request->ip();
 
         if (in_array($requestIp, ['127.0.0.1', '::1'], true)) {
-            try {
-                $response = Http::timeout(3)
-                    ->get('https://api.ipify.org');
-
-                if ($response->successful()) {
-                    $publicIp = trim($response->body());
-
-                    if (filter_var($publicIp, FILTER_VALIDATE_IP)) {
-                        return $publicIp;
+            // OPTIMIZATION: Local IP ko 1 ghante ke liye cache kara hai taaki har login par 3 sec lag na aaye
+            return Cache::remember('local_public_ip', 3600, function () {
+                try {
+                    $response = Http::timeout(3)->get('https://api.ipify.org');
+                    if ($response->successful() && filter_var(trim($response->body()), FILTER_VALIDATE_IP)) {
+                        return trim($response->body());
                     }
-                }
-            } catch (\Throwable $e) {
-                // Fallback below
-            }
+                } catch (\Throwable $e) {}
+                return '127.0.0.1'; // Fallback
+            });
         }
 
         return $requestIp;
     }
-
-    // private function getRealIp(Request $request): ?string
-    // {
-    //     return $request->ip();
-    // }
 
     private function updateLoginTracking(Request $request, User $user): void
     {
@@ -91,16 +87,20 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name'     => 'required|string|max:255',
-            'username' => [ 'required', 'string', 'max:255', Rule::unique('users')->whereNull('deleted_at') ],
+            'username' => [ 'required', 'string', 'min:3','max:20', 'regex:/^[a-zA-Z0-9_]+$/', Rule::unique('users')->whereNull('deleted_at') ],
             'email'    => [
-                'required', 'email',
+                'required', 'email', 'max:255', 'email:rfc,strict',
                 function ($attribute, $value, $fail) {
                     if (User::where('email_hash', blind_hash($value))->exists()) {
                         $fail('The email has already been taken.');
                     }
                 }
             ],
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'confirmed', Password::min(8)->max(20)->mixedCase()->numbers()->symbols()],
+            'terms'    => ['accepted'],
+        ], [
+            // Custom friendly message
+            'terms.accepted' => 'You must read and accept the Terms & Conditions to register.',
         ]);
 
         if ($validator->fails()) {
@@ -119,7 +119,6 @@ class AuthController extends Controller
                     $query->where('email_hash', blind_hash($cleanEmail)) 
                           ->orWhere('username', $request->username);
                 })->first();
-
             // Agar user mila aur wo deleted (trashed) hai, to restore karenge
             if ($user && $user->trashed()) {
                 // $user->account_status = 'active';
@@ -127,14 +126,7 @@ class AuthController extends Controller
             } else {
                 $user = new User();
             }
-
-            // Create Core User
-            // $user = new User();
-
-            // 1. Create Core User
-            // $user = new User();
             $user->name             = $request->name;
-            // $user->email            = $request->email;
             $user->email            = Str::lower($request->email);
             $user->email_hash       = blind_hash(Str::lower($request->email));    
             $user->username         = $request->username;
@@ -149,7 +141,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $this->updateLoginTracking($request, $user);
 
-            //Registration ke baad Verification Email send karo
+            //Verification Email after Registration
             $this->sendVerificationEmail($user);
 
             return response()->json([
@@ -174,42 +166,11 @@ class AuthController extends Controller
             );
     }
 
-    public function postLogin(Request $request)
+    public function postLogin(FrontendLoginRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'login_id' => 'required|string',
-            'password' => 'required|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['message' => $validator->errors()->first()], 422);
-        }
-
-        $loginId = $request->login_id;
-        $isEmail = filter_var($loginId, FILTER_VALIDATE_EMAIL);
-
-        if ($isEmail) {
-            $user = User::where('email_hash', blind_hash($loginId))->where('user_role', 'user')->first();
-        } else {
-            $user = User::where('username_hash', blind_hash($loginId))->where('user_role', 'user')->first();
-        }
-
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => trans('auth.failed')], 401);
-        }
-
-        // User banned hai to login hi nahi karne diya jayga
-        // if ($user->is_banned == 1) {
-        if ($user->is_banned) {
-            return response()->json(['message' => 'Your account has been banned by the administration. You cannot access this platform.'], 403);
-        }
-
-        // 1. Authenticate & Secure Session
-        Auth::login($user, $request->boolean('remember'));
-        $request->session()->regenerate();
-        
+        $user = $request->authenticate();
+        Auth::guard('web')->login($user, $request->boolean('remember'));
         $this->updateLoginTracking($request, $user);
-
         return response()->json([
             'message'  => 'Authentication successful. Redirecting...',
             'redirect' => route('home')
@@ -218,14 +179,12 @@ class AuthController extends Controller
 
     public function postLogout(Request $request)
     {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        Auth::guard('web')->logout();
+        // $request->session()->regenerateToken();
         return redirect()->route('login');
     }
 
     // EMAIL VERIFICATION LOGIC
-    //Reusable method to generate signed URL and send email
     private function sendVerificationEmail(User $user)
     {
         $verificationUrl = URL::temporarySignedRoute(
@@ -264,18 +223,6 @@ class AuthController extends Controller
 
         // 4. One-Click / Single Use Condition
         if ($user->email_verified_at) {
-
-            // Agar Admin testing kar raha hai, toh usey wapas admin dashboard bhejo
-            // if (Auth::check() && Auth::user()->user_role === 'admin') {
-            //     return redirect()->route('admin.dashboard')->with('success', 'This user email is already verified.');
-            // }
-            
-            // // Agar koi aur dusra user logged in hai, toh use logout karo (Security)
-            // if (Auth::check() && Auth::id() != $user->id) {
-            //     Auth::logout();
-            //     $request->session()->invalidate();
-            //     $request->session()->regenerateToken();
-            // }
             
             if (Auth::check()) {
                 Auth::logout();
@@ -286,7 +233,7 @@ class AuthController extends Controller
             return redirect()->route('login')->with('error', 'This verification link has already been used and is now expired.');
         }
 
-        // 5. Success: DB Update Karein
+        // 5. Success: DB Update
         $user->email_verified_at = now();
         $user->save();
 
@@ -295,25 +242,7 @@ class AuthController extends Controller
             Mail::to($user->email)->send(new EmailVerifiedConfirmation($user));
         } catch (\Exception $e) {
             SmartLog::throttledError('Verification Confirmation Mail Failed: ' . $e->getMessage(), [], 60);
-            // SmartLog::throttledError('Verification Confirmation Mail Failed: ' . $e->getMessage());
         }
-
-        // Final Smart Redirect (Handling Session Conflicts)
-        // if (Auth::check()) {
-        //     if (Auth::id() == $user->id) {
-        //         // Jo user verify hua hai, wahi logged in hai
-        //         return redirect()->route('home')->with('success', 'Email verified successfully! You can now continue.');
-        //     } elseif (Auth::user()->user_role === 'admin') {
-        //         // Admin test kar raha hai, usey wapas admin panel bhejo
-        //         return redirect()->route('admin.dashboard')->with('success', 'User email verified successfully!');
-        //     } else {
-        //         // Case C: Koi randomly dusra user logged in hai, use logout karke login par bhejo
-        //         Auth::logout();
-        //         $request->session()->invalidate();
-        //         $request->session()->regenerateToken();
-        //         return redirect()->route('login')->with('success', 'Email verified successfully! Please log in to your account.');
-        //     }
-        // }
 
         // 7. Final Smart Redirect
         $redirectRoute = Auth::check() ? 'home' : 'login';
@@ -324,13 +253,10 @@ class AuthController extends Controller
     public function resendVerificationEmail(Request $request)
     {
         $user = Auth::user();
-
         if ($user->email_verified_at) {
             return response()->json(['message' => 'Your email is already verified.'], 400);
         }
-
         $this->sendVerificationEmail($user);
-
         return response()->json(['message' => 'Verification link sent to your email.']);
     }
 
@@ -342,32 +268,78 @@ class AuthController extends Controller
 
     public function postForgotPassword(FrontendForgotPasswordRequest $request)
     {
-        // Rate Limiting Check
+        // 1. Rate Limiting Check
         $request->ensureIsNotRateLimited();
 
-        // Business Logic
-       $user = User::where('email_hash', blind_hash($request->email))->where('user_role', 'user')->first();
-        
-        // $user = User::where('email', $request->email)->where('user_role', 'admin')->first();
-        // $user = User::where('email_hash', blind_hash($request->email))->first();
+        // 2. Target User Lookup
+        $user = User::where('email_hash', blind_hash($request->email))
+                    ->where('user_role', 'user')
+                    ->first();
 
         if ($user) {
-            $token = Str::random(64);
+            // Check for Hard Lock on account
+            $hardLockKey = 'frontend-hard-lock|' . $user->id;
+            if (Cache::has($hardLockKey)) {
+                $lockExpiryTimestamp = Cache::get($hardLockKey);
+                $secondsRemaining = $lockExpiryTimestamp - now()->timestamp;
 
+                if ($secondsRemaining > 0) {
+                    return response()->json([
+                        'message'        => 'Your account is locked due to multiple failed logins.',
+                        'locked_seconds' => $secondsRemaining
+                    ], 429);
+                } else {
+                    Cache::forget($hardLockKey);
+                }
+            }
+
+            // Generate Random Token
+            $token = Str::random(64);
             DB::table('password_reset_tokens')->updateOrInsert(
                 ['email' => $request->email],
                 [
-                    'token' => Hash::make($token), 
+                    'token'      => Hash::make($token),
                     'created_at' => Carbon::now()
                 ]
             );
 
+            // PREPARE URLs OUTSIDE THE MAILABLE
+            // 1. Password Reset URL
+            $resetUrl = route('frontend.password.reset.index', [
+                'token' => $token,
+                'email' => $request->email
+            ]);
+
+            // 2. Report Unauthorized URL (Signed - 48 Hours)
+            $reportUrl = null;
             try {
-                Mail::to($request->email)->send(new FrontendPasswordResetMail($token, $request->email, $user->name));
+                $reportUrl = URL::temporarySignedRoute(
+                    'account.report',
+                    now()->addMinutes(5),
+                    [
+                        'user' => $user->id,
+                        'hash' => sha1($user->email)
+                    ]
+                );
+            } catch (\Throwable $routeError) {
+                Log::error('Report URL Generation Error: ' . $routeError->getMessage(), [
+                    'file' => $routeError->getFile(),
+                    'line' => $routeError->getLine()
+                ]);
+            }
+
+
+            // 3. Send Email
+            try {
+                Mail::to($request->email)->send(
+                    new FrontendPasswordResetMail($user->name, $request->email, $resetUrl, $reportUrl)
+                );
             } catch (\Throwable $th) {
-                // Log::error('Mail Sending Failed: ' . $th->getMessage());
-                SmartLog::throttledError('Mail Sending Failed: ' . $th->getMessage(), [], 60);
-                
+                Log::error('Password Reset Mail Dispatch Failed: ' . $th->getMessage(), [
+                    'email' => $request->email,
+                    'file'  => $th->getFile(),
+                    'line'  => $th->getLine()
+                ]);
             }
         }
 
@@ -386,9 +358,28 @@ class AuthController extends Controller
         $email = strtolower(trim($request->email));
         $tokenData = DB::table('password_reset_tokens')->where('email', $email)->first();
 
-        // Edge Case 4: Token expiry (15 mins) & Tamper protection
-        if (!$tokenData || !Hash::check($token, $tokenData->token) || Carbon::parse($tokenData->created_at)->addMinutes(15)->isPast()) {
-            return redirect()->route('frontend.forgot.password.index')->with('error', 'The reset link has expired or is invalid.');
+        // Token expiry & Tamper protection
+        if (!$tokenData || !Hash::check($token, $tokenData->token) || Carbon::parse($tokenData->created_at)->addMinutes(2)->isPast()) {
+            return redirect()->route('frontend.forgot.password.index')->with('error', 'The reset link has expired or is invalid. Request a new one.');
+        }
+
+        $cacheKey = 'reset-click|' . $email;
+        
+        if (Cache::has($cacheKey)) {
+            $firstClickedAt = Cache::get($cacheKey);
+            $secondsElapsed = now()->timestamp - $firstClickedAt;
+
+            // Agar pehle click ko 60 seconds se zyada ho gaye hain
+            if ($secondsElapsed > 60) {
+                // Security: Token DB se permanently hamesha ke liye udha do
+                DB::table('password_reset_tokens')->where('email', $email)->delete();
+                Cache::forget($cacheKey);
+                
+                return redirect()->route('frontend.forgot.password.index')->with('error', 'Your password reset session expired 60 seconds after opening the link. Please request a new one.');
+            }
+        } else {
+            // Pehli baar click kiya hai, toh current timestamp Cache me daal do (valid for 15 mins)
+            Cache::put($cacheKey, now()->timestamp, 900); 
         }
 
         return view('frontend.auth.reset-password', compact('token', 'email'));
@@ -399,11 +390,28 @@ class AuthController extends Controller
         $cleanEmail = strtolower(trim($request->email));
         $resetRecord = DB::table('password_reset_tokens')->where('email', $cleanEmail)->first();
 
-        if (!$resetRecord || !Hash::check($request->token, $resetRecord->token) || Carbon::parse($resetRecord->created_at)->addMinutes(15)->isPast()) {
+        if (!$resetRecord || !Hash::check($request->token, $resetRecord->token) || Carbon::parse($resetRecord->created_at)->addMinutes(2)->isPast()) {
             return response()->json([
                 'message' => 'Your session has expired. Please request a new link.',
                 'redirect' => route('frontend.forgot.password.index') 
             ], 422);
+        }
+
+        $cacheKey = 'reset-click|' . $cleanEmail;
+        
+        if (Cache::has($cacheKey)) {
+            $firstClickedAt = Cache::get($cacheKey);
+            
+            // Agar page open karke 60 seconds se zyada wait karke submit kiya
+            if (now()->timestamp - $firstClickedAt > 60) {
+                DB::table('password_reset_tokens')->where('email', $cleanEmail)->delete();
+                Cache::forget($cacheKey);
+                
+                return response()->json([
+                    'message' => 'Your session expired because you took longer than 60 seconds to submit the new password. Please request a new link.',
+                    'redirect' => route('frontend.forgot.password.index') 
+                ], 422);
+            }
         }
 
         try {
@@ -412,18 +420,42 @@ class AuthController extends Controller
             if ($user) {
                 // Edge Case 5: Cannot reuse the exact same password
                 if (Hash::check($request->password, $user->password)) {
-                    return response()->json(['message' => 'Your new password cannot be same as your current password.'], 422);
+                    return response()->json(['message' => 'Your new password cannot be the same as your current password.'], 422);
                 }
                 
                 $user->password = Hash::make($request->password);
+                
+                // ADD: MULTI-DEVICE SESSION LOGOUT LOGIC
+                if ($request->boolean('logout_all_devices')) {
+                    // Remember me tokens invalidate
+                    $user->setRememberToken(Str::random(60));
+
+                    // Database session destroy
+                    if (Schema::hasTable('sessions')) {
+                        DB::table('sessions')->where('user_id', $user->id)->delete();
+                    }
+                }
+
                 $user->save();
 
+                // CONFIRMATION EMAIL TO ADMIN
+                try {
+                    Mail::to($user->email)->send(new PasswordResetSuccessMail($user));
+                } catch (\Throwable $e) {
+                    SmartLog::throttledError('Frontend Password Reset Confirmation Mail Failed: ' . $e->getMessage(), [], 60);
+                }
+
+                // RateLimiter::clear('frontend-login-attempts|' . $user->id);
+                // Cache::forget('frontend-lock-level|' . $user->id);
+                // Cache::forget('frontend-hard-lock|' . $user->id);
+
                 // Clear any security locks on successful reset (if progressive lockout is enabled on frontend)
-                \Illuminate\Support\Facades\RateLimiter::clear('frontend-login-attempts|' . $user->id);
+                // \Illuminate\Support\Facades\RateLimiter::clear('frontend-login-attempts|' . $user->id);
             }
             
-            // Edge Case 6: Single-use token. Delete immediately after success.
+            // Single-use token. Delete immediately after success.
             DB::table('password_reset_tokens')->where('email', $cleanEmail)->delete();
+            Cache::forget($cacheKey);
 
             return response()->json([
                 'message' => 'Password reset successfully! Redirecting...',
@@ -434,5 +466,84 @@ class AuthController extends Controller
             Log::error('Frontend Password Reset Error: ' . $e->getMessage());
             return response()->json(['message' => 'Something went wrong. Please try again.'], 500);
         }
+    }
+
+    // Show Report Form
+    public function getReport(Request $request, $userId, $hash)
+    {
+        if (!$request->hasValidSignature()) {
+            if (Auth::check()) {
+                return redirect()->route('home')->with('error', 'The report link has expired. Please visit the security section to report this issue.');
+            }
+            return redirect()->route('login')->with('error', 'The report link has expired or is invalid.');
+        }
+
+        $user = User::findOrFail($userId);
+
+        if (!hash_equals((string) $hash, sha1($user->email))) {
+            if (Auth::check()) {
+                return redirect()->route('home')->with('error', 'Invalid report link parameters.');
+            }
+            return redirect()->route('login')->with('error', 'Invalid report link parameters.');
+        }
+        return view('frontend.auth.report', [
+            'user' => $user,
+            'hash' => $hash
+        ]);
+    }
+
+    public function postReport(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id'     => 'required|exists:users,id',
+            'hash'        => 'required|string',
+            'description' => 'required|string|min:10|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 422);
+        }
+
+        $user = User::findOrFail($request->user_id);
+
+        if (!hash_equals((string) $request->hash, sha1($user->email))) {
+            return response()->json(['message' => 'Unauthorized submission.'], 403);
+        }
+
+        // DYNAMIC REDIRECT: Check if user is already logged in
+        $redirectUrl = Auth::check() ? route('home') : route('login');
+
+        // Spam prevention check
+        $alreadyReported = DB::table('reports')
+            ->where('reporter_user_id', $user->id)
+            ->where('reported_user_id', $user->id)
+            ->where('status', 'pending')
+            ->where('created_at', '>=', now()->subHours(24))
+            ->exists();
+
+        if ($alreadyReported) {
+            return response()->json([
+                'message'  => 'Your report is already under review. Our security team will inspect it.',
+                'redirect' => $redirectUrl
+            ]);
+        }
+
+        // Insert into reports table
+        DB::table('reports')->insert([
+            'reporter_user_id' => $user->id,
+            'reported_user_id' => $user->id,
+            'reason'           => $request->description,
+            'status'           => 'pending',
+            'created_at'       => now(),
+            'updated_at'       => now(),
+        ]);
+
+        // Security action: Target user ke sabhi pending reset tokens ko delete kar dein
+        DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+
+        return response()->json([
+            'message'  => 'Security alert reported successfully. Pending password reset links have been cancelled.',
+            'redirect' => $redirectUrl
+        ]);
     }
 }

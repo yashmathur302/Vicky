@@ -211,9 +211,19 @@ input[type="password"]::-ms-clear {
     display: none !important;
 }
 
-.dropify-wrapper .dropify-errors-container {
+/* .dropify-wrapper .dropify-errors-container {
         display: none !important;
-    }
+    } */
+
+/* Forcefully hide Dropify internal error box */
+.dropify-wrapper .dropify-errors-container {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
 
 
 @media (max-width: 991.98px) {

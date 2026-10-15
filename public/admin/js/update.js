@@ -3,43 +3,8 @@
 $(document).ready(function() {
 
     //Event Update JS - AJAX Form Submission
-
     $('#updateEventForm').on('submit', function(e) {
 
-        // GLOBAL DROPIFY EVENT HANDLERS (Users & Events)
-        let dropifyElements = $('.dropify').dropify();
-
-        // 1. Error handling for Corrupted/Wrong Files
-        dropifyElements.on('dropify.errors', function(event, element) {
-            let fieldName = element.input[0].name;
-            let errorMsg = "The file is not allowed (PNG, JPG, JPEG, WEBP only) or the file is corrupted.";
-            
-            // Custom div me error dikhayein
-            $('#custom_error_' + fieldName).html('<i class="fas fa-exclamation-circle"></i> ' + errorMsg).removeClass('d-none');
-            
-            // STUCK LOADER FIX
-            setTimeout(function() {
-                element.clearElement();
-            }, 300);
-        });
-
-        // 2. Hide error on fresh upload or clear
-        dropifyElements.on('dropify.fileReady dropify.afterClear', function(event, element) {
-            let fieldName = element.input[0].name;
-            $('#custom_error_' + fieldName).addClass('d-none').text('');
-        });
-
-        // 3. Update hidden input on Remove click
-        dropifyElements.on('dropify.afterClear', function(event, element) {
-            let fieldName = element.input[0].name;
-            $('#remove_' + fieldName).val('1');
-        });
-
-        // 4. Update hidden input back to 0 on new file selection
-        dropifyElements.on('change', function() {
-            let fieldName = $(this).attr('name');
-            $('#remove_' + fieldName).val('0');
-        });
 
         e.preventDefault(); 
 
@@ -154,98 +119,10 @@ $(document).ready(function() {
             }
         });
 
-
-
-        // Processing state
-
-        // submitBtn.prop('disabled', true).text('Updating...');
-
-        // $.ajax({
-
-        //     url: form.attr('action'),
-
-        //     type: "POST",
-
-        //     data: formData,
-
-        //     contentType: false,
-
-        //     processData: false,
-
-        //     success: function(response) {
-
-        //         if(response.redirect) { 
-
-        //             window.location.href = response.redirect; 
-
-        //         }
-
-        //     },
-
-        //     error: function(xhr) {
-
-        //         submitBtn.prop('disabled', false).text('Update Event'); 
-
-                
-
-        //         if(xhr.status === 422) {
-
-        //             showToastMessage('error', xhr.responseJSON.message);
-
-        //         } else {
-
-        //             showToastMessage('error', 'Something went wrong. Please try again.');
-
-        //         }
-
-        //     }
-
-        // });
-
     });
 
-
-
     //Users Update JS
-
     if ($('#updateUserForm').length) {
-
-    
-        // 1. Dropify Initialization & Error Events
-        let dropifyElements = $('.dropify').dropify();
-
-        // Agar file extension galat ho, size bada ho, ya corrupted/spoofed file ho
-        dropifyElements.on('dropify.errors', function(event, element) {
-            let fieldName = element.input[0].name;
-            let errorMsg = "The file is not allowed (PNG, JPG, JPEG, WEBP only) or the file is corrupted.";
-            
-            // Custom div me error dikhayein
-            $('#custom_error_' + fieldName).html('<i class="fas fa-exclamation-circle"></i> ' + errorMsg).removeClass('d-none');
-            
-            // STUCK LOADER FIX: Agar corrupted file ki wajah se loader ghoom raha hai, 
-            // toh 300ms baad dropify input ko manually clear kar do taaki user stuck na ho.
-            setTimeout(function() {
-                element.clearElement();
-            }, 300);
-        });
-
-        // Jab user nayi sahi file select kare ya cross dabaye toh error hide kar do
-        dropifyElements.on('dropify.fileReady dropify.afterClear', function(event, element) {
-            let fieldName = element.input[0].name;
-            $('#custom_error_' + fieldName).addClass('d-none').text('');
-        });
-        
-        // DROPIFY REMOVE FIX
-        $('.dropify').on('dropify.afterClear', function(event, element) {
-            if (element.input[0].name === 'profile_picture') $('#remove_profile_picture').val('1');
-            if (element.input[0].name === 'cover_image') $('#remove_cover_image').val('1');
-        });
-
-        // Jab user wapas nayi file select kare toh hidden input wapas 0 ho jaye
-        $('.dropify').on('change', function() {
-            if ($(this).attr('name') === 'profile_picture') $('#remove_profile_picture').val('0');
-            if ($(this).attr('name') === 'cover_image') $('#remove_cover_image').val('0');
-        });
 
         let tagifyInterests, tagifyEducation;
 

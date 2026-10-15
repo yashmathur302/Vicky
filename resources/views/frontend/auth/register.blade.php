@@ -3,54 +3,50 @@
 @section('title', 'Create Account')
 
 @section('content')
-<main class="cl-login04">
+<main class="auth-layout">
     <!-- Background Image -->
-    <img class="cl-login04__bg" src="{{ asset('frontend/images/login_bg.jpg') }}" alt="Background">
+    <img class="auth-layout__bg" src="{{ asset('frontend/images/login_bg.jpg') }}" alt="Background">
 
     <!-- LEFT SECTION: INTRO -->
-    <div class="cl-login04__intro">
-        <a class="cl-login04__brand" href="#">
+    <div class="auth-layout__intro">
+        <a class="auth-layout__brand" href="#">
             <i class="fas fa-layer-group text-warning"></i>
             <span>{{ config('app.name', 'My Project') }}</span>
         </a>
-        <p class="cl-login04__kicker">Welcome to our platform</p>
-        <p class="cl-login04__headline">Every tool your team has ever loved, in one place.</p>
-        <!-- <ul class="cl-login04__chips">
-            <li><span style="background:#fb7185"></span><span style="background:#f97316"></span><span style="background:#facc15"></span>Seamless UI</li>
-            <li><span style="background:#0ea5e9"></span><span style="background:#6366f1"></span><span style="background:#a855f7"></span>Secure Data</li>
-        </ul> -->
+        <p class="auth-layout__kicker">Welcome to our platform</p>
+        <p class="auth-layout__headline">Every tool your team has ever loved, in one place.</p>
     </div>
 
     <!-- RIGHT SECTION: REGISTER FORM GLASS CARD -->
-    <section class="cl-login04__glass">
+    <section class="auth-glass">
         <div>
-            <h1 class="cl-login04__title">Create an Account</h1>
-            <p class="cl-login04__sub">Join us and experience secure data handling.</p>
+            <h1 class="auth-title">Create an Account</h1>
+            <p class="auth-sub">Join us and experience secure data handling.</p>
 
-            <form id="frontendRegisterForm" class="cl-login04__form" action="{{ route('register.submit') }}" method="POST">
+            <form id="frontendRegisterForm" action="{{ route('register.submit') }}" method="POST">
                 @csrf
                 
-                <div class="cl-login04__field">
-                    <label class="cl-login04__label" for="name">Full Name <span class="text-danger">*</span></label>
-                    <input class="cl-login04__input" id="name" name="name" type="text" autocomplete="name" required placeholder="e.g. John Doe" autofocus>
+                <div class="auth-field">
+                    <label class="auth-label" for="name">Full Name <span class="text-danger">*</span></label>
+                    <input class="auth-input" id="name" name="name" type="text" autocomplete="name" required placeholder="e.g. John Doe" autofocus>
                 </div>
 
-                <div class="cl-login04__field">
-                    <label class="cl-login04__label" for="username">Username <span class="text-danger">*</span></label>
-                    <input class="cl-login04__input" id="username" name="username" type="text" autocomplete="username" required placeholder="e.g. johndoe123">
+                <div class="auth-field">
+                    <label class="auth-label" for="username">Username <span class="text-danger">*</span></label>
+                    <input class="auth-input" id="username" name="username" type="text" autocomplete="username" required placeholder="e.g. johndoe123">
                 </div>
 
-                <div class="cl-login04__field">
-                    <label class="cl-login04__label" for="email">Email Address <span class="text-danger">*</span></label>
-                    <input class="cl-login04__input" id="email" name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+                <div class="auth-field">
+                    <label class="auth-label" for="email">Email Address <span class="text-danger">*</span></label>
+                    <input class="auth-input" id="email" name="email" type="email" autocomplete="email" required placeholder="you@example.com">
                 </div>
 
-                <div class="cl-login04__field">
-                    <label class="cl-login04__label" for="password">Password <span class="text-danger">*</span></label>
+                <div class="auth-field">
+                    <label class="auth-label" for="password">Password <span class="text-danger">*</span></label>
                     <!-- "input-group" class rakhi gayi hai auth.js compatibility ke liye -->
-                    <div class="cl-login04__pw input-group">
-                        <input class="cl-login04__input" style="border-radius: 14px" id="password" name="password" type="password" autocomplete="new-password" required placeholder="Min 8 characters">
-                        <button class="cl-login04__eye password-toggle" type="button">
+                    <div class="auth-pw-wrapper input-group">
+                        <input class="auth-input" style="border-radius: 14px" id="password" name="password" type="password" autocomplete="new-password" required placeholder="Min 8 characters">
+                        <button class="auth-eye password-toggle" type="button" aria-label="Toggle Password Visibility">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
@@ -59,34 +55,34 @@
                     </div>
                 </div>
 
-                <div class="cl-login04__field">
-                    <label class="cl-login04__label" for="password_confirmation">Confirm Password <span class="text-danger">*</span></label>
-                    <div class="cl-login04__pw input-group">
-                        <input class="cl-login04__input" style="border-radius: 14px" id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required placeholder="Confirm your password">
-                        <button class="cl-login04__eye password-toggle" type="button">
+                <div class="auth-field">
+                    <label class="auth-label" for="password_confirmation">Confirm Password <span class="text-danger">*</span></label>
+                    <div class="auth-pw-wrapper input-group">
+                        <input class="auth-input" style="border-radius: 14px" id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required placeholder="Confirm your password">
+                        <button class="auth-eye password-toggle" type="button" aria-label="Toggle Password Visibility">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- TERMS AND CONDITIONS CHECKBOX -->
-                <div class="cl-login04__row mt-3 mb-4">
-                    <label class="cl-login04__check" for="terms" style="cursor: pointer; user-select: none;">
+                <div class="auth-row mt-3 mb-4">
+                    <label class="auth-check" for="terms" style="cursor: pointer; user-select: none;">
                         <input type="checkbox" name="terms" id="terms" value="1" style="cursor: pointer;" required> 
-                        <span>I agree to the <a href="javascript:void(0)" class="cl-login04__link text-decoration-underline" id="viewTermsLink">Terms &amp; Conditions</a> <span class="text-danger">*</span></span>
+                        <span>I agree to the <a href="javascript:void(0)" class="auth-link text-decoration-underline" id="viewTermsLink">Terms &amp; Conditions</a> <span class="text-danger">*</span></span>
                     </label>
                 </div>
 
                 <!-- AJAX Form Message Container -->
                 <div class="form-message mt-2 mb-3" style="display: none;"></div>
 
-                <button class="cl-login04__submit" type="submit">
+                <button class="auth-submit" type="submit">
                     Sign Up
                     <i class="fas fa-arrow-right ms-2"></i>
                 </button>
             </form>
             
-            <p class="cl-login04__foot">Already have an account? <a class="cl-login04__link" href="{{ route('login') }}">Sign In</a></p>
+            <p class="auth-foot">Already have an account? <a class="auth-link" href="{{ route('login') }}">Sign In</a></p>
         </div>
     </section>
 </main>

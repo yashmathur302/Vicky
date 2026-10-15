@@ -2,9 +2,9 @@
 
 @section('title', 'Feed | ' . config('app.name', 'TeachYou'))
 
-@push('styles')
+{{-- @push('styles')
     <link rel="stylesheet" href="{{ asset('frontend/css/feed.css') }}">
-@endpush
+@endpush --}}
 
 @php
     $homeUser   = auth()->user();
@@ -166,7 +166,7 @@
 
 @endsection
 
-@push('scripts')
+{{-- @push('scripts')
     <script src="{{ asset('frontend/js/stories.js') }}"></script>
     <script src="{{ asset('frontend/js/create-post.js') }}"></script>
-@endpush
+@endpush --}}

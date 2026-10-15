@@ -214,7 +214,7 @@
 
                         />
 
-                        <div id="custom_error_profile_picture" class="text-danger small fw-bold mt-1 d-none"></div>
+                        <div id="custom_error_cover_image" class="text-danger small fw-bold mt-1 d-none"></div>
 
                         <input type="hidden" name="remove_cover_image" id="remove_cover_image" value="0">
 
