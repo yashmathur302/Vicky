@@ -1,0 +1,3 @@
+[09-Oct-2026 12:10:51 Asia/Kolkata] PHP Fatal error:  Cannot redeclare App\Http\Controllers\Admin\AuthController::postResetPassword() in /home2/compueaz/public_html/ty/app/Http/Controllers/Admin/AuthController.php on line 233
+[09-Oct-2026 12:10:54 Asia/Kolkata] PHP Fatal error:  Cannot redeclare App\Http\Controllers\Admin\AuthController::postResetPassword() in /home2/compueaz/public_html/ty/app/Http/Controllers/Admin/AuthController.php on line 233
+[12-Oct-2026 13:22:00 Asia/Kolkata] PHP Fatal error:  Cannot redeclare App\Mail\FrontendAccountLockedMail::__construct() in /home2/compueaz/public_html/ty/app/Mail/FrontendAccountLockedMail.php on line 26

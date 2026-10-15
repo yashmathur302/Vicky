@@ -1,0 +1,343 @@
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/outfit-400-latin.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(../fonts/outfit-500-latin.woff2) format('woff2');
+}
+
+.auth-body {
+  margin: 0;
+  background: #f3f4f6;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* body {
+  margin: 0;
+  background: #f3f4f6;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+} */
+
+.cl-login04 {
+  --cl-login04-ink: #fff;
+  --cl-login04-soft: rgba(255, 255, 255, .86);
+  --cl-login04-glass: rgba(255, 255, 255, .14);
+  --cl-login04-edge: rgba(255, 255, 255, .34);
+  --cl-login04-field: rgba(255, 255, 255, .16);
+  --cl-login04-solid: #231a52;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 440px);
+  gap: clamp(32px, 6vw, 96px);
+  align-items: center;
+  min-height: 100vh;
+  min-width: 100%;
+  box-sizing: border-box;
+  padding: 48px clamp(16px, 7vw, 120px);
+  overflow: hidden;
+  background: var(--cl-login04-solid);
+  color: var(--cl-login04-ink);
+  line-height: 1.5;
+  isolation: isolate;
+}
+
+.cl-login04::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(100deg, rgba(10, 8, 40, .55), rgba(10, 8, 40, .15) 60%, rgba(10, 8, 40, .35));
+}
+
+.cl-login04__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cl-login04__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cl-login04__kicker {
+  margin: 48px 0 10px;
+  color: var(--cl-login04-soft);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.cl-login04__headline {
+  max-width: 15ch;
+  margin: 0 0 28px;
+  font-size: clamp(34px, 5vw, 64px);
+  font-weight: 600;
+  letter-spacing: -.03em;
+  line-height: 1.02;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, .3);
+}
+
+.cl-login04__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cl-login04__chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px 6px 8px;
+  border: 1px solid var(--cl-login04-edge);
+  border-radius: 999px;
+  background: rgba(20, 16, 60, .45);
+  font-size: 14px;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.cl-login04__chips li span {
+  width: 16px;
+  height: 16px;
+  margin-right: -8px;
+  border: 2px solid rgba(255, 255, 255, .8);
+  border-radius: 50%;
+}
+
+.cl-login04__glass {
+  padding: clamp(24px, 5vw, 40px);
+  border: 1px solid var(--cl-login04-edge);
+  border-radius: 28px;
+  background: var(--cl-login04-glass);
+  box-shadow: 0 30px 60px -20px rgba(8, 6, 30, .55), inset 0 1px 0 rgba(255, 255, 255, .35);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+
+.cl-login04__title {
+  margin: 0 0 4px;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+
+.cl-login04__sub {
+  margin: 0 0 26px;
+  color: var(--cl-login04-soft);
+  font-size: 16px;
+}
+
+.cl-login04__field {
+  margin-bottom: 16px;
+}
+
+.cl-login04__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cl-login04__input {
+  display: block;
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 14px;
+  background: var(--cl-login04-field);
+  color: #fff;
+  font-size: 16px;
+  transition: all .15s ease;
+}
+
+.cl-login04__input::placeholder {
+  color: rgba(255, 255, 255, .72);
+}
+
+.cl-login04__input:focus {
+  outline: none;
+  border-color: #fff;
+  background: rgba(255, 255, 255, .22);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, .22);
+}
+
+.cl-login04__pw {
+  position: relative;
+  /* Override bootstrap input-group for custom design */
+  display: block !important; 
+}
+
+.cl-login04__pw .cl-login04__input {
+  padding-right: 54px;
+}
+
+.cl-login04__eye {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.cl-login04__eye:hover {
+  background: rgba(255, 255, 255, .16);
+}
+
+.cl-login04__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 4px 0 22px;
+}
+
+.cl-login04__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cl-login04__check input {
+  width: 18px;
+  height: 18px;
+  accent-color: #fff;
+}
+
+.cl-login04__link {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, .5);
+  text-underline-offset: 3px;
+}
+
+.cl-login04__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 14px;
+  background: #fff;
+  color: #1e1250;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .45);
+  transition: transform .15s ease;
+}
+
+.cl-login04__submit:hover {
+  transform: translateY(-2px);
+}
+
+.cl-login04__or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 16px;
+  color: var(--cl-login04-soft);
+  font-size: 13px;
+}
+
+.cl-login04__or::before,
+.cl-login04__or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, .3);
+}
+
+.cl-login04__social {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.cl-login04__icon-btn {
+  display: grid;
+  place-items: center;
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+
+.cl-login04__icon-btn:hover {
+  background: rgba(255, 255, 255, .22);
+}
+
+.cl-login04__foot {
+  margin: 22px 0 0;
+  color: var(--cl-login04-soft);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Microsoft Edge ke default password reveal icon ko hide karne ke liye */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none !important;
+}
+
+/* homepage css */
+/* body { background-color: #f3f4f6; } */
+/* Hide scrollbar for sidebars but allow scrolling */
+/* .sticky-sidebar { position: sticky; top: 80px; height: calc(100vh - 80px); overflow-y: auto; }
+.sticky-sidebar::-webkit-scrollbar { width: 0px; background: transparent; }
+.story-avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #0d6efd; padding: 2px; object-fit: cover; }
+.post-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+.hover-bg-light:hover { background-color: #f8f9fa; transition: 0.2s; border-radius: 8px; }
+.feed-image { max-height: 500px; width: 100%; object-fit: cover; border-radius: 8px; }
+.action-btn { cursor: pointer; color: #6c757d; font-weight: 500; }
+.action-btn:hover { background-color: #f1f3f5; color: #0d6efd; border-radius: 5px; }
+.stories-wrapper { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px; scrollbar-width: none; }
+.stories-wrapper::-webkit-scrollbar { display: none; } */
+
+
+@media (max-width: 900px) {
+  .cl-login04 {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 32px;
+  }
+  .cl-login04__chips {
+    display: none;
+  }
+}
