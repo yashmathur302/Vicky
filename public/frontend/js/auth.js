@@ -3,7 +3,8 @@ $(document).ready(function () {
     // 1. GLOBAL AJAX SECURITY SETUP
     $.ajaxSetup({
         headers: {
-            'X-CSRF-TOKEN': $('input[name="_token"]').val() // Form me se CSRF token uthayega
+            'X-CSRF-TOKEN': $('input[name="_token"]').val(),
+            'Accept': 'application/json' // YEH SABSE ZAROORI HAI 302 REDIRECT ROKNE KE LIYE
         },
         statusCode: {
             // CSRF Token Mismatch / Session Expired
@@ -14,36 +15,27 @@ $(document).ready(function () {
                 } else {
                     alert('Security session expired. The page will reload automatically.');
                 }
-                
-                // 2 second baad automatically page reload karke fresh token le aayega
                 setTimeout(function() {
                     window.location.reload(); 
                 }, 2000);
             },
-            
             // Unauthenticated (Logout ho gaya background me)
             401: function(xhr) {
                 window.location.href = '/login';
-            },
-
-            // Method Not Allowed (Agar redirect ya refresh ki wajah se GET ban gaya ho)
-            405: function(xhr) {
-                window.location.reload(); // Force reload to correct the state
             }
+            // 405 ko yahan se completely hata diya gaya hai taaki infinite reload loop na bane
         }
     });
 
-    // Time Formatter (Seconds ko Hours/Minutes/Seconds me convert karne ke liye)
+    // Time Formatter
     function formatTime(totalSeconds) {
         let h = Math.floor(totalSeconds / 3600);
         let m = Math.floor((totalSeconds % 3600) / 60);
         let s = totalSeconds % 60;
-
         let parts = [];
         if (h > 0) parts.push(h + (h === 1 ? ' hour' : ' hours'));
         if (m > 0) parts.push(m + (m === 1 ? ' minute' : ' minutes'));
         if (s >= 0) parts.push(s + (s === 1 ? ' second' : ' seconds'));
-
         return parts.join(' ');
     }
 
@@ -51,7 +43,6 @@ $(document).ready(function () {
     $(document).on('click', '.password-toggle', function () {
         let input = $(this).closest('.input-group').find('input');
         let icon = $(this).find('i');
-        
         if (input.attr('type') === 'password') {
             input.attr('type', 'text');
             icon.removeClass('fa-eye').addClass('fa-eye-slash');
@@ -60,7 +51,6 @@ $(document).ready(function () {
             icon.removeClass('fa-eye-slash').addClass('fa-eye');
         }
     });
-
 
     // ==========================================
     // 1. SIGN IN FLOW (Login)
@@ -86,16 +76,16 @@ $(document).ready(function () {
                 url: form.attr('action'),
                 type: 'POST',
                 data: formData,
+                dataType: 'json', // STRICT JSON EXPECTATION
                 success: function (response) {
                     submitBtn.removeClass('btn-primary').addClass('btn-success').html('Success <i class="fas fa-check ms-2"></i>');
                     messageBox.html('<div class="alert alert-success p-2 small fw-bold mb-0"><i class="fas fa-check-circle"></i> ' + response.message + '</div>').slideDown();
-                    
                     setTimeout(function () {
                         window.location.href = response.redirect;
                     }, 1000);
                 },
                 error: function (xhr) {
-                    // CSRF Token Mismatch (419)
+                    // CSRF Token Mismatch (419) handled via silent fetch
                     if (xhr.status === 419) {
                         submitBtn.prop('disabled', true).html('<i class="fas fa-sync-alt fa-spin"></i> Securing Connection...');
                         $.get(window.location.href, function(htmlText) {
@@ -134,7 +124,7 @@ $(document).ready(function () {
                         return;
                     }
 
-                    // Normal Errors (422 / 401)
+                    // Normal Errors (422 / 401 / 500)
                     submitBtn.prop('disabled', false).html(originalBtnText);
                     let errorMsg = 'An error occurred. Please try again.';
                     if (xhr.responseJSON) {
@@ -150,83 +140,51 @@ $(document).ready(function () {
         });
     }
 
-
     // ==========================================
     // 2. REGISTER FLOW
     // ==========================================
-    // if ($('#frontendRegisterForm').length > 0) {
-    //     $('#frontendRegisterForm').on('submit', function (e) {
-    //         e.preventDefault();
+    if ($('#frontendRegisterForm').length > 0) {
+        $('#frontendRegisterForm').on('submit', function (e) {
+            e.preventDefault();
 
-    //         let form = $(this);
-    //         let submitBtn = form.find('button[type="submit"]');
-    //         let messageBox = form.find('.form-message');
-    //         let formData = form.serialize();
-    //         let originalBtnText = submitBtn.html();
+            let form = $(this);
+            let submitBtn = form.find('button[type="submit"]');
+            let messageBox = form.find('.form-message');
+            let formData = form.serialize();
+            let originalBtnText = submitBtn.html();
 
-    //         submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating Account...');
-    //         messageBox.slideUp().removeClass('text-danger text-success text-warning');
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating Account...');
+            messageBox.slideUp().removeClass('text-danger text-success text-warning');
 
-    //         $.ajax({
-    //             url: form.attr('action'),
-    //             type: 'POST',
-    //             data: formData,
-    //             success: function (response) {
-    //                 submitBtn.removeClass('btn-primary').addClass('btn-success').html('Registered <i class="fas fa-check ms-2"></i>');
-    //                 messageBox.html('<div class="alert alert-success p-2 small fw-bold mb-0"><i class="fas fa-check-circle"></i> ' + response.message + '</div>').slideDown();
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: formData,
+                dataType: 'json', // STRICT JSON EXPECTATION
+                success: function (response) {
+                    submitBtn.removeClass('btn-primary').addClass('btn-success').html('Registered <i class="fas fa-check ms-2"></i>');
+                    messageBox.html('<div class="alert alert-success p-2 small fw-bold mb-0"><i class="fas fa-check-circle"></i> ' + response.message + '</div>').slideDown();
+                    setTimeout(function () {
+                        window.location.href = response.redirect;
+                    }, 1500);
+                },
+                error: function (xhr) {
+                    submitBtn.prop('disabled', false).html(originalBtnText);
+                    let errorMsg = 'An error occurred. Please try again.';
                     
-    //                 setTimeout(function () {
-    //                     window.location.href = response.redirect;
-    //                 }, 1500);
-    //             },
-    //             error: function (xhr) {
-    //                 submitBtn.prop('disabled', false).html(originalBtnText);
-    //                 let errorMsg = 'An error occurred. Please try again.';
-    //                 if (xhr.responseJSON) {
-    //                     if (xhr.responseJSON.message && !xhr.responseJSON.errors) {
-    //                         errorMsg = xhr.responseJSON.message;
-    //                     } else if (xhr.responseJSON.errors) {
-    //                         errorMsg = Object.values(xhr.responseJSON.errors)[0][0]; 
-    //                     }
-    //                 }
-    //                 messageBox.html('<div class="alert alert-danger p-2 small fw-bold mb-0"><i class="fas fa-exclamation-circle"></i> ' + errorMsg + '</div>').slideDown();
-    //             }
-    //         });
-    //     });
-    // }
-
-    $('#frontendRegisterForm, #frontendLoginForm').on('submit', function(e) {
-        e.preventDefault(); // <-- Ye line sabse zaroori hai taaki form page refresh karke submit na ho
-        
-        let form = $(this);
-        let submitBtn = form.find('button[type="submit"]');
-        let msgDiv = form.find('.form-message');
-        
-        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
-        msgDiv.slideUp();
-
-        $.ajax({
-            url: form.attr('action'),
-            type: form.attr('method') || 'POST', // Hamesha POST use karega
-            data: form.serialize(),
-            success: function(response) {
-                if(response.redirect) {
-                    msgDiv.html('<div class="alert alert-success small"><i class="fas fa-check-circle"></i> ' + response.message + '</div>').slideDown();
-                    window.location.href = response.redirect;
+                    // 419 error globally handle hoga, yahan sirf 422 aur 500 parse honge
+                    if (xhr.responseJSON) {
+                        if (xhr.responseJSON.message && !xhr.responseJSON.errors) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON.errors) {
+                            errorMsg = Object.values(xhr.responseJSON.errors)[0][0]; 
+                        }
+                    }
+                    messageBox.html('<div class="alert alert-danger p-2 small fw-bold mb-0"><i class="fas fa-exclamation-circle"></i> ' + errorMsg + '</div>').slideDown();
                 }
-            },
-            error: function(xhr) {
-                submitBtn.prop('disabled', false).html('Try Again <i class="fas fa-arrow-right ms-2"></i>');
-                
-                // 419 aur 405 error humara global setup handle kar lega, 
-                // isliye yahan sirf validation (422) aur server (500) error dikhayenge
-                if (xhr.status === 422 || xhr.status === 500) {
-                    let errorMessage = xhr.responseJSON ? xhr.responseJSON.message : 'Something went wrong. Please try again.';
-                    msgDiv.html('<div class="alert alert-danger small"><i class="fas fa-exclamation-circle"></i> ' + errorMessage + '</div>').slideDown();
-                }
-            }
+            });
         });
-    });
+    }
 
     // ==========================================
     // 2.1 TERMS & CONDITIONS POPUP LOGIC

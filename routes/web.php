@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AuthController;
 // use \App\Http\Middleware\AdminAutoLogout;
 use \App\Http\Middleware\CheckAdminStatus;
+use App\Services\VerificationReminderService;
 
 //FASTER REDIRECTS
 Route::redirect('/', '/login');
@@ -75,9 +76,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     });
 });
 
-// Route::get('/run-clear-9f3k2x7q', function () {
-//     abort_unless(request('key') === 'PUT_A_LONG_RANDOM_STRING_HERE', 404);
-//     Artisan::call('optimize:clear');
-//     return nl2br(Artisan::output());
-// });
+Route::get('/internal/verification-reminders/{token}', function (string $token, VerificationReminderService $service) {
+    abort_unless(hash_equals((string) config('verification.ping_token'), $token), 404);
+    return response()->json($service->run());
+});
 

@@ -39,6 +39,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 ? route('admin.dashboard')
                 : route('home')
         );
+
+        $middleware->append(\App\Http\Middleware\RunVerificationReminders::class);
     })
 
     ->withExceptions(function (Exceptions $exceptions): void {

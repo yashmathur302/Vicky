@@ -117,7 +117,7 @@
         var logoutUrl    = body.dataset.logoutUrl;
         var loginUrl     = body.dataset.loginUrl;
         var isRemembered = body.dataset.remembered === '1';
-        var maxIdleMs    = (parseInt(body.dataset.idleSeconds, 10) || 300) * 1000;
+        var maxIdleMs    = (parseInt(body.dataset.idleSeconds, 10) || 30) * 1000;
 
         var lastActivity    = Date.now();
         var activeSinceBeat = false;

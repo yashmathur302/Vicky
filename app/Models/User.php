@@ -43,15 +43,16 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'is_banned'         => 'boolean',
-            'last_login'        => 'datetime',
-            'email'             => 'encrypted',
-            'session'           => 'encrypted',
-            'browser'           => 'encrypted',
-            'ip_address'        => 'encrypted',
-            'operating_system'  => 'encrypted',
+            'verification_reminder_sent_at'     => 'datetime',
+            'email_verified_at'                 => 'datetime',
+            'password'                          => 'hashed',
+            'is_banned'                         => 'boolean',
+            'last_login'                        => 'datetime',
+            'email'                             => 'encrypted',
+            'session'                           => 'encrypted',
+            'browser'                           => 'encrypted',
+            'ip_address'                        => 'encrypted',
+            'operating_system'                  => 'encrypted',
 
         ];
     }
