@@ -26,48 +26,6 @@ class UserController extends Controller
 {
     public function getList(Request $request)
     {
-        // $timeLimit = now()->subMinutes(2);
-        $timeLimit = now()->subDays(1);
-
-        // 1. ACTIVE se INACTIVE karna (Time Limit Cross ya Soft Delete)
-        User::withTrashed() // Deleted users ko bhi query me shamil karein
-            ->where('account_status', 'active')
-            ->where('user_role', '!=', 'admin') // Admin hamesha safe hai
-            ->where(function ($query) use ($timeLimit) {
-                
-                // Case A: Last login purana ho gaya hai
-                $query->where('last_login', '<', $timeLimit)
-                
-                      // Case B: Naya account tha par grace period nikal gaya
-                      ->orWhere(function ($subQ) use ($timeLimit) {
-                          $subQ->whereNull('last_login')
-                               ->where('created_at', '<', $timeLimit); 
-                      })
-                      
-                      // EDGE CASE FIX: Agar user soft delete ho chuka hai, toh usko inactive kardo
-                      ->orWhereNotNull('deleted_at');
-            })
-            ->update(['account_status' => 'inactive']);
-
-
-        // 2. INACTIVE se wapas ACTIVE karna (Agar wapas aakar login kar liya)
-        User::where('account_status', 'inactive')
-            ->where('user_role', '!=', 'admin')
-            ->whereNull('deleted_at') // Deleted users active nahi hone chahiye
-            ->where(function ($query) use ($timeLimit) {
-                
-                // Case A: User ne time limit ke andar (recent) login kar liya hai
-                $query->where('last_login', '>=', $timeLimit)
-                
-                      // Case B: Naya account abhi just bana hai (Grace period me hai)
-                      ->orWhere(function ($subQ) use ($timeLimit) {
-                          $subQ->whereNull('last_login')
-                               ->where('created_at', '>=', $timeLimit);
-                      });
-            })
-            ->update(['account_status' => 'active']);
-
-
         // LISTING & FILTERING
         $query = User::with('userInfo')
             ->where('user_role', '!=', 'admin')
@@ -76,19 +34,51 @@ class UserController extends Controller
         if ($request->filled('search_name')) {
             $query->where('name', 'like', $request->search_name . '%');
         }
-        
-        // if ($request->filled('search_username')) {
-        //     $query->where('username', 'like', '%' . $request->search_username . '%');
-        // }
-
-        // if ($request->filled('search_status')) {
-        //     $query->where('account_status', $request->search_status);
-        // }
 
         $users = $query->paginate(15);
 
         return view('admin.users.list', compact('users'));
     }
+    
+    // public function getList(Request $request)
+    // {
+    //     // $timeLimit = now()->subMinutes(2);
+    //     $timeLimit = now()->subDays(1);
+
+    //     // 1. ACTIVE se INACTIVE karna (Time Limit Cross ya Soft Delete)
+    //     User::withTrashed() // Deleted users ko bhi query me shamil karein
+    //         ->where('account_status', 'active')
+    //         ->where('user_role', '!=', 'admin') // Admin hamesha safe hai
+    //         ->where(function ($query) use ($timeLimit) {
+                
+    //             // Case A: Last login purana ho gaya hai
+    //             $query->where('last_login', '<', $timeLimit)
+                
+    //                   // Case B: Naya account tha par grace period nikal gaya
+    //                   ->orWhere(function ($subQ) use ($timeLimit) {
+    //                       $subQ->whereNull('last_login')
+    //                            ->where('created_at', '<', $timeLimit); 
+    //                   })
+                      
+    //                   // EDGE CASE FIX: Agar user soft delete ho chuka hai, toh usko inactive kardo
+    //                   ->orWhereNotNull('deleted_at');
+    //         })
+    //         ->update(['account_status' => 'inactive']);
+
+
+    //     // LISTING & FILTERING
+    //     $query = User::with('userInfo')
+    //         ->where('user_role', '!=', 'admin')
+    //         ->orderBy('created_at', 'desc');
+            
+    //     if ($request->filled('search_name')) {
+    //         $query->where('name', 'like', $request->search_name . '%');
+    //     }
+
+    //     $users = $query->paginate(15);
+
+    //     return view('admin.users.list', compact('users'));
+    // }
 
     public function getBannedList(Request $request)
     {

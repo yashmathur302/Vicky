@@ -118,21 +118,19 @@ class AuthController extends Controller
             
             $user = User::withTrashed()
                 ->where(function($query) use ($request, $cleanEmail) {
-                    // email ki jagah email_hash check hoga
                     $query->where('email_hash', blind_hash($cleanEmail)) 
                           ->orWhere('username', $request->username);
                 })->first();
-            // Agar user mila aur wo deleted (trashed) hai, to restore karenge
             if ($user && $user->trashed()) {
-                // $user->account_status = 'active';
+                $user->account_status = 'active';
                 $user->restore();
             } else {
                 $user = new User();
             }
-            $user->name             = $request->name;
-            $user->email            = Str::lower($request->email);
-            $user->email_hash       = blind_hash(Str::lower($request->email));    
-            $user->username         = $request->username;
+            $user->name             = trim($request->name);
+            $user->email            = $cleanEmail;
+            $user->email_hash       = blind_hash($cleanEmail);
+            $user->username         = trim($request->username);
             $user->password         = Hash::make($request->password);
             $user->user_role        = 'user';
             $user->save(); 
@@ -183,7 +181,8 @@ class AuthController extends Controller
     public function postLogout(Request $request)
     {
         Auth::guard('web')->logout();
-        // $request->session()->regenerateToken();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
         return redirect()->route('login');
     }
 
@@ -313,8 +312,10 @@ class AuthController extends Controller
         // 1. Rate Limiting Check
         $request->ensureIsNotRateLimited();
 
+        $cleanEmail = strtolower(trim($request->email));
+
         // 2. Target User Lookup
-        $user = User::where('email_hash', blind_hash($request->email))
+        $user = User::where('email_hash', blind_hash($cleanEmail))
                     ->where('user_role', 'user')
                     ->first();
 
@@ -338,7 +339,7 @@ class AuthController extends Controller
             // Generate Random Token
             $token = Str::random(64);
             DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $request->email],
+                ['email' => $cleanEmail],
                 [
                     'token'      => Hash::make($token),
                     'created_at' => Carbon::now()
@@ -349,7 +350,7 @@ class AuthController extends Controller
             // 1. Password Reset URL
             $resetUrl = route('frontend.password.reset.index', [
                 'token' => $token,
-                'email' => $request->email
+                'email' => $cleanEmail
             ]);
 
             // 2. Report Unauthorized URL (Signed - 48 Hours)
@@ -373,12 +374,12 @@ class AuthController extends Controller
 
             // 3. Send Email
             try {
-                Mail::to($request->email)->send(
-                    new FrontendPasswordResetMail($user->name, $request->email, $resetUrl, $reportUrl)
+                Mail::to($user->email)->send(
+                    new FrontendPasswordResetMail($user->name, $cleanEmail, $resetUrl, $reportUrl)
                 );
             } catch (\Throwable $th) {
                 Log::error('Password Reset Mail Dispatch Failed: ' . $th->getMessage(), [
-                    'email' => $request->email,
+                    'email' => $cleanEmail,
                     'file'  => $th->getFile(),
                     'line'  => $th->getLine()
                 ]);

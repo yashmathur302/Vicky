@@ -393,27 +393,17 @@
 
 
                         <div class="col-md-6 my-4 d-flex">
-
                             <!-- Read Only Status Field -->
-
                             <div class="fw-bold me-3">Account Status</div>
-
-                            @if($user->account_status == 'active')
-
-                                <span class="badge bg-success px-3 py-2" style="font-size: 13px;">ACTIVE</span>
-
-                            @else
-
-                                <span class="badge bg-secondary px-3 py-2" style="font-size: 13px;">INACTIVE</span>
-
-                            @endif
-
+                            <div id="live-account-status">
+                                @if($user->account_status == 'active')
+                                    <span class="badge bg-success px-3 py-2" style="font-size: 13px;">ACTIVE</span>
+                                @else
+                                    <span class="badge bg-secondary px-3 py-2" style="font-size: 13px;">INACTIVE</span>
+                                @endif
+                            </div>
                         </div>
-
-                        
-
                     </div>
-
                 </div>
 
 
@@ -651,153 +641,67 @@
                         <!-- Status & Badges -->
 
                         <div class="col-md-12 mt-2">
-
-                            {{-- <h6 class="fw-bold border-bottom pb-2 mb-3">Account State & Badges</h6> --}}
-
                             <div class="d-flex gap-4 align-items-center">
-
-                                {{-- <div class="w-25">
-
-                                    <select class="form-select form-control" id="account_status" name="account_status">
-
-                                        @php $status = $user->userInfo->account_status ?? 'active'; @endphp
-
-                                        <option value="active" {{ $status == 'active' ? 'selected' : '' }}>Active</option>
-
-                                        <option value="inactive" {{ $status == 'inactive' ? 'selected' : '' }}>Inactive</option>
-
-                                    </select>
-
-                                </div> --}}
-
-                                <div class="form-check form-switch form-check-reverse d-flex justify-content-between align-items-center p-0 mt-2">
-
+                                {{-- <div class="form-check form-switch form-check-reverse d-flex justify-content-between align-items-center p-0 mt-2">
                                     <label class="form-check-label fw-bold" for="is_private">Private Account</label>
-
                                     <input class="form-check-input custom-toggle ms-3 m-0" type="checkbox" id="is_private" name="is_private" value="1" {{ ($user->userInfo->is_private ?? false) ? 'checked' : '' }}>
-
-                                </div>
-
-
+                                </div> --}}
 
                                 {{-- <div class="form-check form-switch form-check-reverse d-flex justify-content-between align-items-center p-0 mt-2">
-
                                     <label class="form-check-label fw-bold" for="is_verified">Verified</label>
-
                                     <input class="form-check-input custom-toggle ms-3 m-0" type="checkbox" id="is_verified" name="is_verified" value="1" {{ ($user->userInfo->is_verified ?? false) ? 'checked' : '' }}>
-
                                 </div> --}}
-
                             </div>
-
                         </div>
-
-
-
                     </div>
-
                 </div>
 
-
-
                 <!-- ================= 3. SECURITY TAB ================= -->
-
                 <div class="tab-pane fade" id="security" role="tabpanel" aria-labelledby="security-tab">
-
                     <h5 class="fw-bold mb-3">Login History</h5>
-
                     <div id="login-history-table-container" class="ajax-pagination-container position-relative">
-
                         <div class="table-responsive">
-
                             <table class="table table-bordered table-striped table-hover">
-
                                 <thead class="table-dark">
-
                                     <tr>
-
                                         <th width="5%">S.No</th>
-
                                         <th>Browser</th>
-
                                         <th>Operating System</th>
-
                                         <th>Date & Time</th>
-
                                         <th>IP Address</th>
-
                                     </tr>
-
                                 </thead>
-
                                 <tbody>
-
                                     @forelse($loginHistories as $index => $history)
-
                                         <tr>
-
                                             <td>{{ $loginHistories->firstItem() + $index }}</td>
-
-                                            
-
                                             <td>
-
-                                                {{-- @if(stripos($history->browser, 'chrome') !== false) <i class="fab fa-chrome text-primary me-2"></i> --}}
-
-                                                {{-- @elseif(stripos($history->browser, 'safari') !== false) <i class="fab fa-safari text-primary me-2"></i> --}}
-
-                                                {{-- @elseif(stripos($history->browser, 'firefox') !== false) <i class="fab fa-firefox text-warning me-2"></i> --}}
-
-                                                {{-- @elseif(stripos($history->browser, 'edge') !== false) <i class="fab fa-edge text-info me-2"></i> --}}
-
-                                                {{-- <i class="fas fa-globe text-secondary me-2"></i> --}}
-
+                                                @if(stripos($history->browser, 'chrome') !== false) <i class="fab fa-chrome text-primary me-2"></i>
+                                                @elseif(stripos($history->browser, 'safari') !== false) <i class="fab fa-safari text-primary me-2"></i>
+                                                @elseif(stripos($history->browser, 'firefox') !== false) <i class="fab fa-firefox text-warning me-2"></i>
+                                                @elseif(stripos($history->browser, 'edge') !== false) <i class="fab fa-edge text-info me-2"></i>
+                                                @else <i class="fas fa-globe text-secondary me-2"></i> @endif
                                                 {{ $history->browser }}
-
                                             </td>
-
-                                            
-
                                             <td>
-
-                                                {{-- @if(stripos($history->operating_system, 'windows') !== false) <i class="fab fa-windows text-info me-2"></i> --}}
-
-                                                {{-- @elseif(stripos($history->operating_system, 'mac') !== false) <i class="fab fa-apple text-dark me-2"></i> --}}
-
-                                                {{-- @elseif(stripos($history->operating_system, 'android') !== false) <i class="fab fa-android text-success me-2"></i> --}}
-
-                                                {{-- @else <i class="fas fa-laptop text-secondary me-2"></i> @endif --}}
-
+                                                @if(stripos($history->operating_system, 'windows') !== false) <i class="fab fa-windows text-info me-2"></i>
+                                                @elseif(stripos($history->operating_system, 'mac') !== false) <i class="fab fa-apple text-dark me-2"></i>
+                                                @elseif(stripos($history->operating_system, 'android') !== false) <i class="fab fa-android text-success me-2"></i>
+                                                @else <i class="fas fa-laptop text-secondary me-2"></i> @endif
                                                 {{ $history->operating_system }}
-
                                             </td>
-
-                                            
-
                                             <td>{{ $history->created_at->format('d M Y, h:i A') }}</td>
-
                                             <td><span class="badge bg-secondary">{{ $history->ip_address }}</span></td>
-
                                         </tr>
-
                                     @empty
-
                                         <tr>
-
                                             <td colspan="5" class="text-center py-4 text-muted">
-
                                                 <i class="fas fa-info-circle me-1"></i> No login history found for this user.
-
                                             </td>
-
                                         </tr>
-
                                     @endforelse
-
                                 </tbody>
-
                             </table>
-
                         </div>
 
 

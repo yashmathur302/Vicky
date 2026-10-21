@@ -319,7 +319,7 @@ $(document).ready(function() {
         });
 
         let loginHistoryContainer = $('#login-history-table-container');
-        
+
         if (loginHistoryContainer.length) {
             let historyUrl = window.location.href.split('#')[0]; 
             let isPolling = false;
@@ -329,29 +329,35 @@ $(document).ready(function() {
             });
 
             setInterval(function() {
-                
-                if (($('#security-tab').hasClass('active') || $('#security').hasClass('active')) && !isPolling) {
+                // Modified IF condition: Ab ye tabhi chalega jab ya toh Account Tab ya Security Tab active ho
+                if (($('#security-tab').hasClass('active') || $('#security').hasClass('active') || $('#account-tab').hasClass('active') || $('#account').hasClass('active')) && !isPolling) {
                     isPolling = true;
 
                     $.ajax({
                         url: historyUrl,
                         type: 'GET',
                         global: false,
-                        cache: false, // Ye browser ko force karega ki purana cache use na kare aur har baar server se fresh naya data laye!
+                        cache: false,
                         success: function(response) {
-                            
-                            // NATIVE DOM PARSER. Ye poore HTML page ko bina tode memory me load karta hai aur perfectly exact ID uthata hai.
                             let parser = new DOMParser();
                             let doc = parser.parseFromString(response, "text/html");
                             
+                            // 1. Update Login History Table
                             let targetContainer = doc.querySelector('#login-history-table-container');
                             if (targetContainer && targetContainer.innerHTML.trim() !== '') {
                                 loginHistoryContainer.html(targetContainer.innerHTML);
                             }
 
+                            // 2. Update Last Login Text
                             let newLastLogin = doc.querySelector('#last-login-text');
                             if (newLastLogin) {
                                 $('#last-login-text').html(newLastLogin.innerHTML);
+                            }
+
+                            // 3. NEW: Live Update Account Status Badge!
+                            let newStatusBadge = doc.querySelector('#live-account-status');
+                            if (newStatusBadge) {
+                                $('#live-account-status').html(newStatusBadge.innerHTML);
                             }
                         },
                         complete: function() {
@@ -361,6 +367,48 @@ $(document).ready(function() {
                 }
             }, 5000); 
         }
+        
+        // if (loginHistoryContainer.length) {
+        //     let historyUrl = window.location.href.split('#')[0]; 
+        //     let isPolling = false;
+
+        //     $(document).on('click', '#login-history-table-container .pagination a', function(e) {
+        //         historyUrl = $(this).attr('href');
+        //     });
+
+        //     setInterval(function() {
+                
+        //         if (($('#security-tab').hasClass('active') || $('#security').hasClass('active')) && !isPolling) {
+        //             isPolling = true;
+
+        //             $.ajax({
+        //                 url: historyUrl,
+        //                 type: 'GET',
+        //                 global: false,
+        //                 cache: false, // Ye browser ko force karega ki purana cache use na kare aur har baar server se fresh naya data laye!
+        //                 success: function(response) {
+                            
+        //                     // NATIVE DOM PARSER. Ye poore HTML page ko bina tode memory me load karta hai aur perfectly exact ID uthata hai.
+        //                     let parser = new DOMParser();
+        //                     let doc = parser.parseFromString(response, "text/html");
+                            
+        //                     let targetContainer = doc.querySelector('#login-history-table-container');
+        //                     if (targetContainer && targetContainer.innerHTML.trim() !== '') {
+        //                         loginHistoryContainer.html(targetContainer.innerHTML);
+        //                     }
+
+        //                     let newLastLogin = doc.querySelector('#last-login-text');
+        //                     if (newLastLogin) {
+        //                         $('#last-login-text').html(newLastLogin.innerHTML);
+        //                     }
+        //                 },
+        //                 complete: function() {
+        //                     isPolling = false; 
+        //                 }
+        //             });
+        //         }
+        //     }, 5000); 
+        // }
 
     }
 

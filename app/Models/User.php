@@ -162,6 +162,36 @@ class User extends Authenticatable
         return $this->hasMany(PageFollower::class);
     }
 
+    // Naya Accessor (Attribute)
+    public function getAccountStatusAttribute()
+    {
+       
+        if ($this->user_role === 'admin') {
+            return 'active';
+        }
+
+         // TESTING TIME: 2 Minutes (Production me isey subDays(1) kar dena)
+        $timeLimit = now()->subMinutes(2);
+
+        // 1. Agar account soft delete ho chuka hai
+        if ($this->deleted_at !== null) {
+            return 'inactive';
+        }
+
+        // 2. Agar pichle 2 minute me login kiya hai
+        if ($this->last_login && $this->last_login >= $timeLimit) {
+            return 'active';
+        }
+
+        // 3. Agar account naya hai (kabhi login nahi kiya) par grace period me hai
+        if (is_null($this->last_login) && $this->created_at >= $timeLimit) {
+            return 'active';
+        }
+
+        // Baaki sab conditions me inactive
+        return 'inactive';
+    }
+
     // public function getAccountStatusAttribute()
     // {
     //     // Edge Case 1: Admin hamesha active rahega
