@@ -330,6 +330,12 @@ input[type="password"]::-ms-clear {
   /* font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; */
 }
 
+/* Theme switch ke dauran transitions band (flicker se bachne ke liye) */
+.theme-switching,
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after { transition: none !important; }
+
 .tc-main {
   padding-top: var(--tc-header-h);
   min-height: 100vh;

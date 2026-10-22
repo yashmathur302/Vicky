@@ -26,7 +26,8 @@
 
         @forelse ($suggestions as $person)
             <div class="tc-person">
-                <img src="{{ $sideAvatar }}" alt="" class="tc-avatar tc-avatar--md" loading="lazy">
+                {{-- <img src="{{ $sideAvatar }}" alt="" class="tc-avatar tc-avatar--md" loading="lazy"> --}}
+                <img src="{{ $person->avatar_url }}" alt="" class="tc-avatar tc-avatar--md" loading="lazy">
                 <div class="tc-person__info">
                     <strong>{{ $person->name }}</strong>
                     <small>{{ '@' . $person->username }}</small>

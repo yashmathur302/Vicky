@@ -20,6 +20,8 @@ class Post extends Model
         'tagged_user_id',
         'post_type',
         'caption',
+        'privacy',
+        'feeling',
         'link',
         'location_name',
         'likes_count',

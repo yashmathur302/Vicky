@@ -98,10 +98,23 @@
 
         toggle.addEventListener('click', function () {
             var next = current() === 'dark' ? 'light' : 'dark';
+
+            // Transitions band karke theme badlo, phir style apply hone ke baad chalu
+            root.classList.add('theme-switching');
             root.setAttribute('data-bs-theme', next);
+            void root.offsetWidth; // browser ko naya style turant apply karne ko majboor karta hai
+            root.classList.remove('theme-switching');
+
             try { localStorage.setItem(STORAGE_KEY, next); } catch (e) { /* storage blocked */ }
             sync();
         });
+
+        // toggle.addEventListener('click', function () {
+        //     var next = current() === 'dark' ? 'light' : 'dark';
+        //     root.setAttribute('data-bs-theme', next);
+        //     try { localStorage.setItem(STORAGE_KEY, next); } catch (e) { /* storage blocked */ }
+        //     sync();
+        // });
 
         sync();
     }
@@ -220,9 +233,11 @@
 
         var MAX_FILES    = 10;
         var MAX_MB       = { image: 5, video: 50, doc: 10 };
-        var DOC_EXT      = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'];
+        var DOC_EXT      = ['pdf'];
         var ACCEPT_MEDIA = 'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm';
-        var ACCEPT_DOCS  = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt';
+        var ACCEPT_DOCS  = '.pdf';
+        // var DOC_EXT      = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'];
+        // var ACCEPT_DOCS  = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt';
 
         var content      = document.getElementById('cpContent');
         var fileInput    = document.getElementById('cpFiles');
@@ -569,9 +584,79 @@
         // ----- submit -----
         // TEMP (design phase): save route banne par ye handler hata kar normal POST chalega.
         // Post save hone ke baad `discarding = true` set karke modal hide karna, taaki confirm na puche.
+        // form.addEventListener('submit', function (e) {
+        //     e.preventDefault();
+        //     window.showToastMessage('info', 'Posting will be enabled in the next phase.');
+        // });
+
+        // ----- AJAX Submit for Create Post -----
         form.addEventListener('submit', function (e) {
             e.preventDefault();
-            window.showToastMessage('info', 'Posting will be enabled in the next phase.');
+            
+            // Check if form is empty
+            if (!isDirty()) {
+                showError(['Please add some text or photos to your post.']);
+                return;
+            }
+
+            var formData = new FormData(form);
+            // Append files from our custom items array (kyunki browser input direct sync nahi hota)
+            formData.delete('media[]'); 
+            items.forEach(function (it) {
+                formData.append('media[]', it.file);
+            });
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
+
+            // IMPORTANT: Get URL from a data attribute or hardcode it for now
+            var submitUrl = '/post/store'; // Make sure this matches your web.php route
+
+            fetch(submitUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (response.status === 419 || response.status === 401) {
+                    window.location.reload();
+                    throw new Error('auth');
+                }
+                return response.json().then(data => ({ status: response.status, body: data }));
+            })
+            .then(res => {
+                if (res.status === 200) {
+                    submitBtn.innerHTML = 'Post';
+                    submitBtn.disabled = false;
+
+                    // Success! Modal close karo
+                    discarding = true; // prevent discard confirmation
+                    bootstrap.Modal.getInstance(modalEl).hide();
+                    
+                    // Naya HTML feed me sabse upar prepend karo
+                    var feedList = document.getElementById('feedList');
+                    if (feedList && res.body.html) {
+                        feedList.insertAdjacentHTML('afterbegin', res.body.html);
+                    }
+                    
+                    window.showToastMessage('success', res.body.message);
+                } else {
+                    // Validation or Server Error
+                    showError([res.body.message || 'Failed to create post.']);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Post';
+                }
+            })
+            .catch(err => {
+                if (err.message !== 'auth') {
+                    showError(['An error occurred. Please check your connection.']);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Post';
+                }
+            });
         });
 
         refresh();
@@ -690,6 +775,47 @@
             if (entries[0].isIntersecting) { load(); }
         }, { rootMargin: '400px 0px' });
         observer.observe(sentinel);
+
+        // Feed Media Preview Logic
+        // list.addEventListener('click', function (e) {
+        //     var mediaItem = e.target.closest('.tc-media__item img, .tc-media__item video');
+        //     if (mediaItem) {
+        //         var post = mediaItem.closest('.tc-post');
+        //         var captionEl = post.querySelector('.tc-post__text');
+        //         var captionText = captionEl ? captionEl.textContent.trim() : '';
+
+        //         var container = document.getElementById('feedMediaContainer');
+        //         var captionBox = document.getElementById('feedMediaCaption');
+                
+        //         container.innerHTML = ''; // Clear old media
+        //         captionBox.textContent = captionText;
+        //         captionBox.hidden = captionText === '';
+
+        //         if (mediaItem.tagName === 'IMG') {
+        //             var img = document.createElement('img');
+        //             img.src = mediaItem.src;
+        //             img.className = 'img-fluid rounded shadow';
+        //             img.style.maxHeight = '80vh';
+        //             container.appendChild(img);
+        //         } else if (mediaItem.tagName === 'VIDEO') {
+        //             var video = document.createElement('video');
+        //             video.src = mediaItem.src;
+        //             video.controls = true;
+        //             video.autoplay = true;
+        //             video.className = 'img-fluid rounded shadow';
+        //             video.style.maxHeight = '80vh';
+        //             container.appendChild(video);
+        //         }
+
+        //         var modal = new bootstrap.Modal(document.getElementById('feedMediaModal'));
+        //         modal.show();
+
+        //         // Stop video playing when modal closes
+        //         document.getElementById('feedMediaModal').addEventListener('hidden.bs.modal', function () {
+        //             container.innerHTML = ''; 
+        //         }, { once: true });
+        //     }
+        // });
 
         // Post actions (event delegation)
         list.addEventListener('click', function (e) {

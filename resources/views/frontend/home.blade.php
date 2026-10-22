@@ -2,15 +2,12 @@
 
 @section('title', 'Feed | ' . config('app.name', 'TeachYou'))
 
-{{-- @push('styles')
-    <link rel="stylesheet" href="{{ asset('frontend/css/feed.css') }}">
-@endpush --}}
-
 @php
     $homeUser   = auth()->user();
     $homeName   = $homeUser->name ?? 'there';
     $firstName  = strtok($homeName, ' ');
-    $homeAvatar = asset('frontend/images/default-avatar.svg');
+    // $homeAvatar = asset('frontend/images/default-avatar.svg');
+    $homeAvatar = $homeUser->avatar_url;
 
     $feelings = [
         'happy'     => '😊 Happy',
@@ -163,6 +160,25 @@
         <i class="fas fa-chevron-right"></i>
     </button>
 </div>
+
+{{-- Feed Media Preview Modal --}}
+{{-- <div class="modal fade tc-modal" id="feedMediaModal" tabindex="-1" aria-hidden="true" data-bs-theme="dark">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-header border-0 justify-content-end p-2 position-absolute w-100" style="z-index: 999;">
+                <button type="button" class="btn-close btn-close-white fs-4 shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 text-center d-flex flex-column align-items-center justify-content-center">
+                <div id="feedMediaContainer" class="w-100" style="max-height: 80vh; overflow: hidden;">
+                    <!-- JS will inject img or video here -->
+                </div>
+                <div id="feedMediaCaption" class="text-white mt-3 px-3 py-2 rounded" style="background: rgba(0,0,0,0.6); max-width: 80%;">
+                    <!-- JS will inject caption here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div> --}}
 
 @endsection
 

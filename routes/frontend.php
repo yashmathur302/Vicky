@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\AuthController as FrontendAuthController;
 use App\Http\Controllers\Frontend\HomeController;
+use App\Http\Controllers\Frontend\PostController;
 
 // Route::get('/clear-my-cache', function() {
 //     \Illuminate\Support\Facades\Artisan::call('route:clear');
@@ -53,6 +54,7 @@ Route::middleware(['auth:web', 'check.user', 'check.banned'])->group(function ()
     Route::post('/logout', [FrontendAuthController::class, 'postLogout'])->name('logout');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
     Route::get('/feed', [HomeController::class, 'feed'])->middleware('throttle:60,1')->name('feed.load');
+    Route::post('/post/store', [PostController::class, 'store'])->name('post.store');
 
     Route::post('/email/verification-notification', [FrontendAuthController::class, 'resendVerificationEmail'])
         ->middleware(['throttle:1,1'])

@@ -78,6 +78,16 @@ class User extends Authenticatable
     |--------------------------------------------------------------------------
     */
 
+    public function getAvatarUrlAttribute(): string
+    {
+        $relative = 'uploads/users/profile/profile_' . $this->getKey() . '.webp';
+        $absolute = public_path($relative);
+
+        return is_file($absolute)
+            ? asset($relative) . '?v=' . filemtime($absolute)
+            : asset('frontend/images/default-avatar.svg');
+    }
+
     /**
      * User has one UserInfo profile.
      */
@@ -170,8 +180,7 @@ class User extends Authenticatable
             return 'active';
         }
 
-         // TESTING TIME: 2 Minutes (Production me isey subDays(1) kar dena)
-        $timeLimit = now()->subMinutes(2);
+        $timeLimit = now()->subDays(1);
 
         // 1. Agar account soft delete ho chuka hai
         if ($this->deleted_at !== null) {
@@ -191,30 +200,4 @@ class User extends Authenticatable
         // Baaki sab conditions me inactive
         return 'inactive';
     }
-
-    // public function getAccountStatusAttribute()
-    // {
-    //     // Edge Case 1: Admin hamesha active rahega
-    //     if ($this->user_role === 'admin') {
-    //         return 'active';
-    //     }
-
-    //     $timeLimit = Carbon::now()->subMinutes(2); // Production - subDays(30)
-
-    //     // Edge Case 2: Agar naya account hai (kabhi login nahi kiya)
-    //     if (is_null($this->last_login)) {
-    //         // Toh created_at date se check karenge
-    //         if ($this->created_at && $this->created_at->greaterThanOrEqualTo($timeLimit)) {
-    //             return 'active';
-    //         }
-    //         return 'inactive';
-    //     }
-
-    //     // Main Logic: last_login se time check karenge
-    //     if ($this->last_login->greaterThanOrEqualTo($timeLimit)) {
-    //         return 'active';
-    //     }
-
-    //     return 'inactive';
-    // }
 }

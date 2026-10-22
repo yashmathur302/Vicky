@@ -1,18 +1,20 @@
 @php
+    $homeUser   = auth()->user();
     $media = $post['media'];
     $shown = array_slice($media, 0, 4);
     $extra = count($media) - 4;
     $audienceIcon = ['public' => 'fa-earth-asia', 'friends' => 'fa-user-group', 'private' => 'fa-lock'][$post['audience']] ?? 'fa-earth-asia';
+    $profilePicture = $homeUser->avatar_url;
 @endphp
 
 <article class="tc-card tc-post" id="post-{{ $post['id'] }}" data-post-id="{{ $post['id'] }}">
 
     <header class="tc-post__head">
-        <img src="{{ $post['avatar'] }}" alt="" class="tc-avatar tc-avatar--md" loading="lazy">
+        <img src="{{ $profilePicture }}" alt="" class="tc-avatar tc-avatar--md" loading="lazy">
         <div class="tc-post__who">
             <a href="#" class="tc-post__name">{{ $post['author'] }}</a>
             @if (!empty($post['feeling']))
-                <span class="tc-post__tag">is feeling {{ $post['feeling'] }}</span>
+                <span class="tc-post__tag">is {{ $post['feeling'] }}</span>
             @endif
             <div class="tc-post__meta">
                 <span>{{ $post['time'] }}</span>
@@ -27,6 +29,7 @@
                 <i class="fas fa-ellipsis"></i>
             </button>
             <div class="dropdown-menu dropdown-menu-end tc-menu tc-menu--post">
+                <button type="button" class="dropdown-item" data-action="edit"><i class="far fa-edit"></i> Edit Post</button>
                 <button type="button" class="dropdown-item" data-action="save"><i class="far fa-bookmark"></i> Save post</button>
                 <button type="button" class="dropdown-item" data-action="report"><i class="far fa-flag"></i> Report post</button>
             </div>
@@ -58,13 +61,13 @@
     @endif
 
     @if (!empty($post['document']))
-        <a href="#" class="tc-doc">
-            <span class="tc-doc__icon"><i class="fas fa-file-lines"></i></span>
+        <a href="{{ $post['document']['url'] }}" target="_blank" class="tc-doc">
+            <span class="tc-doc__icon"><i class="fas fa-file-pdf text-danger"></i></span>
             <span class="tc-doc__info">
                 <strong>{{ $post['document']['name'] }}</strong>
-                <small>{{ strtoupper($post['document']['ext']) }} &middot; {{ $post['document']['size'] }}</small>
+                <small>PDF &middot; Click to view</small>
             </span>
-            <i class="fas fa-download tc-doc__dl"></i>
+            {{-- <i class="fas fa-download tc-doc__dl"></i> --}}
         </a>
     @endif
 

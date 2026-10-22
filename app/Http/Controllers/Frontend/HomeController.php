@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Follower;
+use App\Models\Post;
 
 class HomeController extends Controller
 {
@@ -16,10 +18,22 @@ class HomeController extends Controller
     {
         $user = Auth::user();
 
-        // "People you may know": DB ke users, khud ko chhodkar, naye pehle.
-        //  (functionality phase): follow/friend kiye hue, blocked aur banned users bhi hatana.
+        if (! $user) {
+            return redirect()->route('login');
+        }
+
+        // "People you may know"
+        // (functionality phase): accepted friends aur blocked users bhi hatana.
+        $userId = $user->getAuthIdentifier();
+
         $suggestions = User::query()
-            ->whereKeyNot($user->getKey())
+            ->where('user_role', 'user')
+            ->where('is_banned', false)
+            ->whereKeyNot($userId)
+            ->whereNotIn('id', Follower::where('follower_id', $userId)->select('following_id'))
+
+            // ->whereKeyNot($user->getKey())
+            // ->whereNotIn('id', Follower::where('follower_id', $user->getKey())->select('following_id'))
             ->latest('id')
             ->limit(5)
             ->get(['id', 'name', 'username']);
@@ -28,29 +42,94 @@ class HomeController extends Controller
     }
 
     // Infinite scroll endpoint: agle posts ka rendered HTML + next cursor (JSON)
+    // Infinite scroll endpoint: fetching REAL posts from Database
     public function feed(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'cursor' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'cursor' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $offset = (int) ($data['cursor'] ?? 0);
 
-        // TEMP: sample data. Functionality phase me yahan Post query aayegi
-        // (cursorPaginate + with() + withCount() + privacy checks).
-        $all   = $this->samplePosts();
-        $slice = array_slice($all, $offset, self::PAGE_SIZE);
+        $userId = Auth::id();
+        
+        // TEMP: Jab friends functionality banegi, tab unki ID yahan fetch hogi. 
+        // Abhi ke liye blank array de rahe hain.
+        $friendIds = []; 
+
+        $postsQuery = Post::with(['user', 'media'])
+            ->where(function($query) use ($userId, $friendIds) {
+                // 1. Post ya toh public ho
+                $query->where('privacy', 'public')
+                      // 2. Ya fir post current user ki khud ki ho (Only me & All)
+                      ->orWhere('user_id', $userId)
+                      // 3. Ya fir privacy 'friends' ho aur post creator user ka friend ho
+                      ->orWhere(function($q) use ($friendIds) {
+                          $q->where('privacy', 'friends')
+                            ->whereIn('user_id', $friendIds);
+                      });
+            })
+            ->latest('id')
+            ->skip($offset)
+            ->take(self::PAGE_SIZE)
+            ->get();
+
+        // DB se posts fetch kar rahe hain (with relations)
+        // $postsQuery = Post::with(['user', 'media'])
+        //     ->latest('id')
+        //     ->skip($offset)
+        //     ->take(self::PAGE_SIZE)
+        //     ->get();
 
         $html = '';
-        foreach ($slice as $post) {
-            $html .= view('frontend.partials.post-card', ['post' => $post])->render();
+        foreach ($postsQuery as $post) {
+            // Post ke media items ko frontend format me map karna
+            $formattedMedia = [];
+            $formattedDoc = null;
+
+            foreach ($post->media as $media) {
+                if ($media->media_type === 'document') {
+                    $formattedDoc = [
+                        'name' => basename($media->media_url),
+                        'ext'  => pathinfo($media->media_url, PATHINFO_EXTENSION),
+                        'size' => 'Attachment', // Dynamic size hum baad me file system se fetch kar sakte hain
+                        'url'  => asset($media->media_url)
+                    ];
+                } else {
+                    $formattedMedia[] = [
+                        'type' => $media->media_type,
+                        'url'  => asset($media->media_url)
+                    ];
+                }
+            }
+
+            // DB model ko post-card variables me map karna
+            $formattedPost = [
+                'id'             => $post->id,
+                'author'         => $post->user->name,
+                'avatar'         => asset('frontend/images/default-avatar.svg'),
+                'time'           => $post->created_at->diffForHumans(), // e.g. "2 hours ago"
+                'audience'       => $post->privacy ?? 'public',
+                'text'           => $post->caption,
+                'feeling'        => $post->feeling ? 'feeling ' . ucfirst($post->feeling) : null,
+                'location'       => $post->location_name,
+                'media'          => $formattedMedia,
+                'document'       => $formattedDoc,
+                'likes'          => $post->likes_count ?? 0,
+                'liked'          => false, // Future me check karenge if current user liked
+                'comments_count' => $post->comments_count ?? 0,
+                'shares'         => $post->share_count ?? 0,
+                'comments'       => [],
+            ];
+
+            $html .= view('frontend.partials.post-card', ['post' => $formattedPost])->render();
         }
 
-        $next = $offset + count($slice);
+        $next = $postsQuery->count() === self::PAGE_SIZE ? $offset + self::PAGE_SIZE : null;
 
         return response()->json([
             'html'        => $html,
-            'next_cursor' => $next < count($all) ? $next : null,
+            'next_cursor' => $next,
         ]);
     }
 

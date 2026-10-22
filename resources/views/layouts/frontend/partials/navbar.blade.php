@@ -3,6 +3,7 @@
     $authName   = $authUser->name ?? 'User';
     $authHandle = '@' . ($authUser->username ?? 'username');
     $avatar     = asset('frontend/images/default-avatar.svg');
+    $myAvatar   = $authUser->avatar_url;
 
     // TEMP SAMPLE DATA (design phase). Functionality phase me DB se aayega.
     $navNotifications = [
@@ -125,11 +126,11 @@
             <div class="dropdown">
                 <button type="button" class="tc-avatar-btn" data-bs-toggle="dropdown" data-bs-auto-close="outside"
                         aria-expanded="false" aria-label="Account menu">
-                    <img src="{{ $avatar }}" alt="" class="tc-avatar tc-avatar--sm">
+                    <img src="{{ $myAvatar }}" alt="" class="tc-avatar tc-avatar--sm">
                 </button>
                 <div class="dropdown-menu dropdown-menu-end tc-menu tc-menu--profile">
                     <a href="#" class="tc-profile-link">
-                        <img src="{{ $avatar }}" alt="" class="tc-avatar tc-avatar--md">
+                        <img src="{{ $myAvatar }}" alt="" class="tc-avatar tc-avatar--md">
                         <span>
                             <strong>{{ $authName }}</strong>
                             <small>{{ $authHandle }}</small>
