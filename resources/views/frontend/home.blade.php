@@ -73,7 +73,7 @@
 {{-- Create post modal --}}
 <div class="modal fade tc-modal" id="createPostModal" tabindex="-1" aria-labelledby="createPostTitle" aria-hidden="true" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <form class="modal-content" id="createPostForm" method="POST" action="#" enctype="multipart/form-data" novalidate>
+        <form class="modal-content" id="createPostForm" method="POST" action="#" data-action-url="{{ route('post.store') }}" enctype="multipart/form-data" novalidate>
             @csrf
             <div class="modal-header justify-content-center position-relative">
                 <h2 class="modal-title fs-6 fw-semibold" id="createPostTitle">Create post</h2>

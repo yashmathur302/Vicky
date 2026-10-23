@@ -610,7 +610,9 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
 
             // IMPORTANT: Get URL from a data attribute or hardcode it for now
-            var submitUrl = '/post/store'; // Make sure this matches your web.php route
+            // var submitUrl = '/post/store'; // Make sure this matches your web.php route
+            // Dynamically grabbing the exact full URL from Blade form
+            var submitUrl = form.dataset.actionUrl;
 
             fetch(submitUrl, {
                 method: 'POST',

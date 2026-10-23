@@ -79,7 +79,9 @@ class PostController extends Controller
                 else $mediaType = 'image';
 
                 // Store file
-                $path = $file->store('posts/media', 'public');
+                // $path = $file->store('posts/media', 'public');
+                // Visibility ko explicitly 'public' force kar rahe hain taaki server naye uploads par 403 error na de
+                $path = $file->store('posts/media', ['disk' => 'public', 'visibility' => 'public']);
                 $url = Storage::url($path);
 
                 PostMedia::create([
