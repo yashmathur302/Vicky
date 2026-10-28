@@ -18,7 +18,8 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    'driver' => 'secure_db',
+    // 'driver' => env('SESSION_DRIVER', 'database'),
 
     /*
     |--------------------------------------------------------------------------
@@ -131,6 +132,26 @@ return [
     'cookie' => env(
         'SESSION_COOKIE',
         Str::slug((string) env('APP_NAME', 'laravel')).'-session'
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Guard-specific Session Cookies
+    |--------------------------------------------------------------------------
+    |
+    | Admin and frontend use distinct session cookies so logging in to one
+    | guard cannot replace the other guard's session in the same browser.
+    |
+    */
+
+    'web_cookie' => env(
+        'WEB_SESSION_COOKIE',
+        env('SESSION_COOKIE', Str::slug((string) env('APP_NAME', 'laravel')).'-session')
+    ),
+
+    'admin_cookie' => env(
+        'ADMIN_SESSION_COOKIE',
+        Str::slug((string) env('APP_NAME', 'laravel')).'-admin-session'
     ),
 
     /*

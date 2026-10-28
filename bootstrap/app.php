@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
 
         // AuthenticateSession removed on purpose (see notes below)
+        $middleware->web(prepend: \App\Http\Middleware\SelectSessionCookie::class);
 
         $middleware->alias([
             'check.admin'  => \App\Http\Middleware\CheckAdminStatus::class,

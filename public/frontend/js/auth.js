@@ -377,7 +377,7 @@ $(document).ready(function () {
     // 5. REPORT UNAUTHORIZED ACTIVITY FLOW
     // ==========================================
     if ($('#frontendReportForm').length > 0) {
-        $('#frontendReportForm').on('submit', function (e) {
+        $('#frontendReportForm').off('submit.accountReport').on('submit.accountReport', function (e) {
             e.preventDefault();
 
             let form = $(this);

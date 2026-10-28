@@ -49,6 +49,3 @@
 </main>
 @endsection
 
-@push('scripts')
-    <script src="{{ asset('frontend/js/auth.js') }}?v={{ time() }}"></script>
-@endpush

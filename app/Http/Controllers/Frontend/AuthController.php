@@ -585,7 +585,7 @@ class AuthController extends Controller
         DB::table('password_reset_tokens')->where('email', $user->email)->delete();
 
         return response()->json([
-            'message'  => 'Security alert reported successfully. Pending password reset links have been cancelled.',
+            'message'  => 'Security alert reported successfully.',
             'redirect' => $redirectUrl
         ]);
     }
